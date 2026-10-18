@@ -367,7 +367,7 @@
             
             <div class="cinematic-quote-box">
                 <p><strong>"Every situation forces a reaction."</strong></p>
-                <p style="margin-top: 8px;">Step into 5 everyday campus moments featuring animated characters, sound effects, and background music. React naturally based on your real instinct.</p>
+                <p style="margin-top: 8px;">Step into 5 everyday campus moments featuring animated characters, audio sound effects, and continuous background ambience. React naturally based on your real instinct.</p>
             </div>
         </div>
 
@@ -430,9 +430,11 @@
         }
     });
 
-    // WEB AUDIO API REAL-TIME SYNTHESIZER & MUSIC ENGINE
+    // PSYCHOLOGICALLY TUNED AUDIO SYNTHESIZER & CONTINUOUS MUSIC ENGINE
     let audioCtx = null;
-    let bgMusicTimer = null;
+    let droneOsc = null;
+    let droneGain = null;
+    let musicInterval = null;
 
     function initAudio() {
         if (!audioCtx) {
@@ -441,17 +443,32 @@
         if (audioCtx.state === 'suspended') {
             audioCtx.resume();
         }
-        startBackgroundMusic();
+        startContinuousMusic();
     }
 
-    // Gentle ambient background melody loop
-    function startBackgroundMusic() {
-        if (bgMusicTimer) return;
+    // Continuous Calm Soundscape (Deep drone + Pentatonic melody)
+    function startContinuousMusic() {
+        if (droneOsc) return;
 
-        const notes = [261.63, 329.63, 392.00, 523.25, 440.00, 349.23]; // C4, E4, G4, C5, A4, F4
+        // Warm Sub-Drone for calming focus (~108 Hz)
+        droneOsc = audioCtx.createOscillator();
+        droneGain = audioCtx.createGain();
+
+        droneOsc.type = 'triangle';
+        droneOsc.frequency.setValueAtTime(108, audioCtx.currentTime); // Grounding pitch
+
+        droneGain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+        droneGain.gain.linearRampToValueAtTime(0.025, audioCtx.currentTime + 2); // Soft swell
+
+        droneOsc.connect(droneGain);
+        droneGain.connect(audioCtx.destination);
+        droneOsc.start();
+
+        // Soft Pentatonic Melodic Notes Loop (Calming 432Hz scale harmonic sequence)
+        const notes = [216.00, 288.00, 324.00, 432.00, 324.00, 288.00]; 
         let noteIdx = 0;
 
-        bgMusicTimer = setInterval(() => {
+        musicInterval = setInterval(() => {
             if (!audioCtx) return;
             const now = audioCtx.currentTime;
             const osc = audioCtx.createOscillator();
@@ -460,23 +477,32 @@
             osc.type = 'sine';
             osc.frequency.setValueAtTime(notes[noteIdx], now);
 
-            gain.gain.setValueAtTime(0.015, now);
-            gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
+            gain.gain.setValueAtTime(0.012, now);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.8);
 
             osc.connect(gain);
             gain.connect(audioCtx.destination);
 
             osc.start(now);
-            osc.stop(now + 1.2);
+            osc.stop(now + 1.8);
 
             noteIdx = (noteIdx + 1) % notes.length;
-        }, 1500);
+        }, 1200);
     }
 
-    function stopBackgroundMusic() {
-        if (bgMusicTimer) {
-            clearInterval(bgMusicTimer);
-            bgMusicTimer = null;
+    function stopContinuousMusic() {
+        if (musicInterval) {
+            clearInterval(musicInterval);
+            musicInterval = null;
+        }
+        if (droneGain && audioCtx) {
+            droneGain.gain.linearRampToValueAtTime(0.0001, audioCtx.currentTime + 1.5);
+            setTimeout(() => {
+                if (droneOsc) {
+                    droneOsc.stop();
+                    droneOsc = null;
+                }
+            }, 1500);
         }
     }
 
@@ -997,7 +1023,7 @@
     function showResults() {
         if (animFrame) cancelAnimationFrame(animFrame);
         if (stepTimer) clearInterval(stepTimer);
-        stopBackgroundMusic();
+        stopContinuousMusic();
 
         document.getElementById('quiz-view').style.display = 'none';
         document.getElementById('results-view').style.display = 'flex';
